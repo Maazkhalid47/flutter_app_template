@@ -1,0 +1,15 @@
+{
+  "_comment": "Copy to prod.json and fill in. prod.json is gitignored — inject these from CI secrets rather than storing them on a laptop.",
+
+  "ENV": "prod",
+  "APP_NAME": "App Template",
+
+  "API_BASE_URL": "https://api.example.com",
+  "API_TIMEOUT_MS": "20000",
+
+  "SUPABASE_URL": "https://your-prod-project.supabase.co",
+  "SUPABASE_ANON_KEY": "your-prod-anon-key",
+
+  "STRIPE_PUBLISHABLE_KEY": "pk_live_...",
+  "STRIPE_MERCHANT_ID": "merchant.com.yourcompany.app"
+}

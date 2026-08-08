@@ -1,0 +1,15 @@
+{
+  "_comment": "Copy to dev.json and fill in. dev.json is gitignored. Run with: flutter run --dart-define-from-file=env/dev.json",
+
+  "ENV": "dev",
+  "APP_NAME": "App Template (dev)",
+
+  "API_BASE_URL": "https://jsonplaceholder.typicode.com",
+  "API_TIMEOUT_MS": "30000",
+
+  "SUPABASE_URL": "",
+  "SUPABASE_ANON_KEY": "",
+
+  "STRIPE_PUBLISHABLE_KEY": "",
+  "STRIPE_MERCHANT_ID": "merchant.com.example.app"
+}

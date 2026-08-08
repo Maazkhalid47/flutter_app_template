@@ -1,0 +1,40 @@
+# Analyzer + lint configuration for the template.
+# See https://dart.dev/guides/language/analysis-options
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  errors:
+    # Treat these as build-breaking: they cause real production bugs.
+    invalid_annotation_target: ignore
+    missing_required_param: error
+    missing_return: error
+    todo: ignore
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    - ".dart_tool/**"
+    - "build/**"
+  language:
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
+
+linter:
+  rules:
+    # Off deliberately: dependencies are injected as *named* parameters, and a
+    # named parameter cannot start with an underscore — so `this._field` is not
+    # available and the suggested fix would force fields to become public.
+    prefer_initializing_formals: false
+
+    always_declare_return_types: true
+    avoid_print: true
+    avoid_relative_lib_imports: true
+    prefer_const_constructors: true
+    prefer_const_constructors_in_immutables: true
+    prefer_const_declarations: true
+    prefer_final_locals: true
+    prefer_single_quotes: true
+    require_trailing_commas: true
+    sort_child_properties_last: true
+    unawaited_futures: true
+    use_super_parameters: true

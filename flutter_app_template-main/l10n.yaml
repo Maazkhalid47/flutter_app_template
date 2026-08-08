@@ -1,0 +1,11 @@
+# Configuration for `flutter gen-l10n`.
+#
+# Output is committed to the repo (lib/generated/l10n) rather than hidden in
+# .dart_tool, so imports resolve in every IDE and code review can see string
+# changes. Re-run `flutter gen-l10n` after editing any .arb file.
+arb-dir: lib/l10n
+template-arb-file: app_en.arb
+output-localization-file: app_localizations.dart
+output-class: AppLocalizations
+output-dir: lib/generated/l10n
+nullable-getter: false
