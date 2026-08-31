@@ -5,11 +5,17 @@ import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 
 import '../cache/secure_storage_service.dart';
 import '../exception/api_exception.dart';
+import 'token_refresh_interceptor.dart';
 
 /// Dio-based HTTP client for the custom backend (kept separate from
-/// Supabase's own client). Attaches the stored access token, retries once
-/// on a 401 after refreshing, and normalizes every failure into
+/// Supabase's own client). Attaches the stored access token, transparently
+/// retries a single 401 after a token refresh (see
+/// [TokenRefreshInterceptor]), and normalizes every failure into
 /// [ApiException] so callers never touch [DioException] directly.
+///
+/// Nothing is retried on transient failures automatically. Wrap a call with
+/// `retryApiCall(() => ApiClient.instance.get(...))` (see
+/// lib/network/api_retry_service.dart) where you explicitly want that.
 class ApiClient {
   ApiClient._internal() {
     _dio = Dio(
@@ -25,9 +31,12 @@ class ApiClient {
     );
 
     _dio.interceptors.addAll([
-      InterceptorsWrapper(onRequest: _onRequest, onError: _onError),
+      InterceptorsWrapper(onRequest: _onRequest),
+      TokenRefreshInterceptor(_dio),
       if (const bool.fromEnvironment('dart.vm.product') == false)
-        PrettyDioLogger(requestHeader: true, requestBody: true, responseBody: true),
+        // requestHeader is off so a debug console never prints the
+        // Authorization bearer token.
+        PrettyDioLogger(requestHeader: false, requestBody: true, responseBody: true),
     ]);
   }
 
@@ -39,7 +48,11 @@ class ApiClient {
     final connectivity = await Connectivity().checkConnectivity();
     if (connectivity.contains(ConnectivityResult.none)) {
       return handler.reject(
-        DioException(requestOptions: options, error: ApiException.network()),
+        DioException(
+          requestOptions: options,
+          type: DioExceptionType.connectionError,
+          error: ApiException.network(),
+        ),
       );
     }
 
@@ -48,13 +61,6 @@ class ApiClient {
       options.headers['Authorization'] = 'Bearer $token';
     }
     handler.next(options);
-  }
-
-  Future<void> _onError(DioException error, ErrorInterceptorHandler handler) async {
-    if (error.error is ApiException) {
-      return handler.next(error);
-    }
-    handler.next(error);
   }
 
   ApiException _mapError(DioException error) {
@@ -86,17 +92,40 @@ class ApiClient {
     }
   }
 
-  Future<Response<T>> get<T>(String path, {Map<String, dynamic>? query}) =>
-      _guard(() => _dio.get<T>(path, queryParameters: query));
+  Future<Response<T>> get<T>(
+    String path, {
+    Map<String, dynamic>? query,
+    CancelToken? cancelToken,
+  }) =>
+      _guard(() => _dio.get<T>(path, queryParameters: query, cancelToken: cancelToken));
 
-  Future<Response<T>> post<T>(String path, {dynamic data}) =>
-      _guard(() => _dio.post<T>(path, data: data));
+  Future<Response<T>> post<T>(
+    String path, {
+    dynamic data,
+    CancelToken? cancelToken,
+  }) =>
+      _guard(() => _dio.post<T>(path, data: data, cancelToken: cancelToken));
 
-  Future<Response<T>> put<T>(String path, {dynamic data}) =>
-      _guard(() => _dio.put<T>(path, data: data));
+  Future<Response<T>> put<T>(
+    String path, {
+    dynamic data,
+    CancelToken? cancelToken,
+  }) =>
+      _guard(() => _dio.put<T>(path, data: data, cancelToken: cancelToken));
 
-  Future<Response<T>> delete<T>(String path, {dynamic data}) =>
-      _guard(() => _dio.delete<T>(path, data: data));
+  Future<Response<T>> patch<T>(
+    String path, {
+    dynamic data,
+    CancelToken? cancelToken,
+  }) =>
+      _guard(() => _dio.patch<T>(path, data: data, cancelToken: cancelToken));
+
+  Future<Response<T>> delete<T>(
+    String path, {
+    dynamic data,
+    CancelToken? cancelToken,
+  }) =>
+      _guard(() => _dio.delete<T>(path, data: data, cancelToken: cancelToken));
 
   Future<Response<T>> _guard<T>(Future<Response<T>> Function() request) async {
     try {
